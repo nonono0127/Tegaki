@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>手書き文字起こし - Tegaki</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: "Hiragino Kaku Gothic ProN", "Noto Sans JP", sans-serif;
+      background: #f5f5f0;
+      color: #1a1a1a;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    header {
+      background: #1a1a1a;
+      color: #fff;
+      padding: 1rem 2rem;
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    header h1 {
+      font-size: 1.4rem;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+    }
+
+    header .subtitle {
+      font-size: 0.85rem;
+      color: #aaa;
+      margin-left: 0.25rem;
+    }
+
+    main {
+      flex: 1;
+      max-width: 1000px;
+      width: 100%;
+      margin: 2rem auto;
+      padding: 0 1.5rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+    }
+
+    .panel {
+      background: #fff;
+      border-radius: 12px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+      padding: 1.5rem;
+    }
+
+    .panel-title {
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: #555;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      margin-bottom: 1rem;
+    }
+
+    /* Upload area */
+    #drop-zone {
+      border: 2px dashed #ccc;
+      border-radius: 8px;
+      padding: 3rem 2rem;
+      text-align: center;
+      cursor: pointer;
+      transition: border-color 0.2s, background 0.2s;
+      position: relative;
+    }
+
+    #drop-zone.drag-over {
+      border-color: #4a6fa5;
+      background: #eef2fa;
+    }
+
+    #drop-zone.has-image {
+      padding: 0;
+      border-style: solid;
+      border-color: #ccc;
+    }
+
+    #drop-zone .placeholder {
+      pointer-events: none;
+    }
+
+    #drop-zone .placeholder svg {
+      width: 48px;
+      height: 48px;
+      color: #bbb;
+      margin-bottom: 0.75rem;
+    }
+
+    #drop-zone .placeholder p {
+      color: #888;
+      font-size: 0.95rem;
+      line-height: 1.6;
+    }
+
+    #drop-zone .placeholder .hint {
+      font-size: 0.8rem;
+      color: #bbb;
+      margin-top: 0.5rem;
+    }
+
+    #file-input { display: none; }
+
+    #preview-img {
+      display: none;
+      width: 100%;
+      max-height: 400px;
+      object-fit: contain;
+      border-radius: 6px;
+    }
+
+    #drop-zone.has-image #preview-img { display: block; }
+    #drop-zone.has-image .placeholder { display: none; }
+
+    .btn-row {
+      display: flex;
+      gap: 0.75rem;
+      margin-top: 1rem;
+      flex-wrap: wrap;
+    }
+
+    button {
+      cursor: pointer;
+      border: none;
+      border-radius: 8px;
+      font-size: 0.95rem;
+      font-weight: 600;
+      padding: 0.65rem 1.4rem;
+      transition: background 0.15s, opacity 0.15s;
+    }
+
+    #transcribe-btn {
+      background: #1a1a1a;
+      color: #fff;
+      flex: 1;
+    }
+
+    #transcribe-btn:hover:not(:disabled) { background: #333; }
+    #transcribe-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    #clear-btn {
+      background: #eee;
+      color: #555;
+    }
+
+    #clear-btn:hover { background: #e0e0e0; }
+
+    /* Spinner */
+    .spinner {
+      display: none;
+      width: 18px;
+      height: 18px;
+      border: 2px solid rgba(255,255,255,0.3);
+      border-top-color: #fff;
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+      margin-right: 0.5rem;
+      vertical-align: middle;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .loading .spinner { display: inline-block; }
+    .loading #btn-label::before { content: "解析中..."; }
+    .loading #btn-label .default-label { display: none; }
+
+    /* Result area */
+    #result-panel { display: none; }
+
+    #result-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 0.75rem;
+    }
+
+    #copy-btn {
+      background: #eee;
+      color: #444;
+      font-size: 0.85rem;
+      padding: 0.4rem 1rem;
+    }
+
+    #copy-btn:hover { background: #e0e0e0; }
+    #copy-btn.copied { background: #d4edda; color: #2e7d32; }
+
+    #result-text {
+      background: #fafafa;
+      border: 1px solid #e8e8e8;
+      border-radius: 8px;
+      padding: 1.25rem;
+      min-height: 150px;
+      white-space: pre-wrap;
+      word-break: break-all;
+      font-size: 1rem;
+      line-height: 1.8;
+      color: #1a1a1a;
+    }
+
+    /* Error */
+    #error-panel {
+      display: none;
+      background: #fff5f5;
+      border: 1px solid #fcc;
+      border-radius: 8px;
+      padding: 1rem 1.25rem;
+      color: #c00;
+      font-size: 0.9rem;
+    }
+
+    footer {
+      text-align: center;
+      padding: 1.5rem;
+      font-size: 0.8rem;
+      color: #aaa;
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>✏️ Tegaki</h1>
+  <span class="subtitle">手書き文字起こし</span>
+</header>
+
+<main>
+  <div class="panel">
+    <div class="panel-title">画像を選択</div>
+
+    <div id="drop-zone" role="button" tabindex="0" aria-label="画像をドロップまたはクリックして選択">
+      <div class="placeholder">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/>
+          <polyline points="21 15 16 10 5 21"/>
+        </svg>
+        <p>ここに画像をドラッグ＆ドロップ<br>またはクリックしてファイルを選択</p>
+        <p class="hint">対応形式: PNG / JPG / GIF / WebP（最大10MB）</p>
+      </div>
+      <img id="preview-img" alt="プレビュー">
+    </div>
+
+    <input type="file" id="file-input" accept="image/png,image/jpeg,image/gif,image/webp">
+
+    <div class="btn-row">
+      <button id="transcribe-btn" disabled>
+        <span class="spinner"></span>
+        <span id="btn-label"><span class="default-label">文字起こしを開始</span></span>
+      </button>
+      <button id="clear-btn">クリア</button>
+    </div>
+  </div>
+
+  <div id="error-panel" role="alert"></div>
+
+  <div id="result-panel" class="panel">
+    <div id="result-header">
+      <div class="panel-title" style="margin-bottom:0">文字起こし結果</div>
+      <button id="copy-btn">コピー</button>
+    </div>
+    <div id="result-text"></div>
+  </div>
+</main>
+
+<footer>Powered by Claude claude-opus-4-6 Vision</footer>
+
+<script>
+  const dropZone = document.getElementById('drop-zone');
+  const fileInput = document.getElementById('file-input');
+  const previewImg = document.getElementById('preview-img');
+  const transcribeBtn = document.getElementById('transcribe-btn');
+  const clearBtn = document.getElementById('clear-btn');
+  const resultPanel = document.getElementById('result-panel');
+  const resultText = document.getElementById('result-text');
+  const errorPanel = document.getElementById('error-panel');
+  const copyBtn = document.getElementById('copy-btn');
+
+  let selectedFile = null;
+
+  // Click on drop zone
+  dropZone.addEventListener('click', () => fileInput.click());
+  dropZone.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') fileInput.click(); });
+
+  // File input change
+  fileInput.addEventListener('change', e => {
+    if (e.target.files.length) setFile(e.target.files[0]);
+  });
+
+  // Drag and drop
+  dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('drag-over'); });
+  dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag-over'));
+  dropZone.addEventListener('drop', e => {
+    e.preventDefault();
+    dropZone.classList.remove('drag-over');
+    const file = e.dataTransfer.files[0];
+    if (file) setFile(file);
+  });
+
+  function setFile(file) {
+    selectedFile = file;
+    const url = URL.createObjectURL(file);
+    previewImg.src = url;
+    dropZone.classList.add('has-image');
+    transcribeBtn.disabled = false;
+    hideError();
+    resultPanel.style.display = 'none';
+  }
+
+  function clearAll() {
+    selectedFile = null;
+    fileInput.value = '';
+    previewImg.src = '';
+    dropZone.classList.remove('has-image');
+    transcribeBtn.disabled = true;
+    resultPanel.style.display = 'none';
+    hideError();
+  }
+
+  clearBtn.addEventListener('click', clearAll);
+
+  // Transcribe
+  transcribeBtn.addEventListener('click', async () => {
+    if (!selectedFile) return;
+
+    transcribeBtn.disabled = true;
+    transcribeBtn.classList.add('loading');
+    hideError();
+    resultPanel.style.display = 'none';
+
+    const formData = new FormData();
+    formData.append('image', selectedFile);
+
+    try {
+      const res = await fetch('/transcribe', { method: 'POST', body: formData });
+      const data = await res.json();
+
+      if (!res.ok || data.error) {
+        showError(data.error || '不明なエラーが発生しました');
+      } else {
+        resultText.textContent = data.text;
+        resultPanel.style.display = 'block';
+        resultPanel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+    } catch (err) {
+      showError('サーバーへの接続に失敗しました');
+    } finally {
+      transcribeBtn.disabled = false;
+      transcribeBtn.classList.remove('loading');
+    }
+  });
+
+  // Copy
+  copyBtn.addEventListener('click', async () => {
+    try {
+      await navigator.clipboard.writeText(resultText.textContent);
+      copyBtn.textContent = '✓ コピー済み';
+      copyBtn.classList.add('copied');
+      setTimeout(() => {
+        copyBtn.textContent = 'コピー';
+        copyBtn.classList.remove('copied');
+      }, 2000);
+    } catch {
+      copyBtn.textContent = 'コピー失敗';
+      setTimeout(() => { copyBtn.textContent = 'コピー'; }, 2000);
+    }
+  });
+
+  function showError(msg) {
+    errorPanel.textContent = '⚠️ ' + msg;
+    errorPanel.style.display = 'block';
+  }
+
+  function hideError() {
+    errorPanel.style.display = 'none';
+  }
+</script>
+</body>
+</html>

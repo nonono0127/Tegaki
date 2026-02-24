@@ -25,17 +25,8 @@
       gap: 0.75rem;
     }
 
-    header h1 {
-      font-size: 1.4rem;
-      font-weight: 700;
-      letter-spacing: 0.05em;
-    }
-
-    header .subtitle {
-      font-size: 0.85rem;
-      color: #aaa;
-      margin-left: 0.25rem;
-    }
+    header h1 { font-size: 1.4rem; font-weight: 700; letter-spacing: 0.05em; }
+    header .subtitle { font-size: 0.85rem; color: #aaa; margin-left: 0.25rem; }
 
     main {
       flex: 1;
@@ -47,6 +38,37 @@
       flex-direction: column;
       gap: 1.5rem;
     }
+
+    /* Mode tabs */
+    .mode-tabs {
+      display: flex;
+      gap: 0;
+      background: #fff;
+      border-radius: 10px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+      overflow: hidden;
+    }
+
+    .mode-tab {
+      flex: 1;
+      padding: 0.75rem 1rem;
+      text-align: center;
+      cursor: pointer;
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: #888;
+      border: none;
+      background: transparent;
+      border-radius: 0;
+      transition: background 0.15s, color 0.15s;
+    }
+
+    .mode-tab.active {
+      background: #1a1a1a;
+      color: #fff;
+    }
+
+    .mode-tab:not(.active):hover { background: #f0f0f0; color: #444; }
 
     .panel {
       background: #fff;
@@ -64,64 +86,66 @@
       margin-bottom: 1rem;
     }
 
-    /* Upload area */
-    #drop-zone {
+    /* Upload zones */
+    .drop-zone {
       border: 2px dashed #ccc;
       border-radius: 8px;
-      padding: 3rem 2rem;
+      padding: 2.5rem 1.5rem;
       text-align: center;
       cursor: pointer;
       transition: border-color 0.2s, background 0.2s;
       position: relative;
     }
 
-    #drop-zone.drag-over {
-      border-color: #4a6fa5;
-      background: #eef2fa;
-    }
+    .drop-zone.drag-over { border-color: #4a6fa5; background: #eef2fa; }
 
-    #drop-zone.has-image {
+    .drop-zone.has-image {
       padding: 0;
       border-style: solid;
       border-color: #ccc;
     }
 
-    #drop-zone .placeholder {
-      pointer-events: none;
-    }
+    .drop-zone .placeholder { pointer-events: none; }
 
-    #drop-zone .placeholder svg {
-      width: 48px;
-      height: 48px;
+    .drop-zone .placeholder svg {
+      width: 40px;
+      height: 40px;
       color: #bbb;
-      margin-bottom: 0.75rem;
+      margin-bottom: 0.5rem;
     }
 
-    #drop-zone .placeholder p {
-      color: #888;
-      font-size: 0.95rem;
-      line-height: 1.6;
-    }
+    .drop-zone .placeholder p { color: #888; font-size: 0.9rem; line-height: 1.5; }
+    .drop-zone .placeholder .hint { font-size: 0.78rem; color: #bbb; margin-top: 0.4rem; }
 
-    #drop-zone .placeholder .hint {
-      font-size: 0.8rem;
-      color: #bbb;
-      margin-top: 0.5rem;
-    }
-
-    #file-input { display: none; }
-
-    #preview-img {
+    .drop-zone .preview-img {
       display: none;
       width: 100%;
-      max-height: 400px;
+      max-height: 320px;
       object-fit: contain;
       border-radius: 6px;
     }
 
-    #drop-zone.has-image #preview-img { display: block; }
-    #drop-zone.has-image .placeholder { display: none; }
+    .drop-zone.has-image .preview-img { display: block; }
+    .drop-zone.has-image .placeholder { display: none; }
 
+    /* Excel mode: two upload panels side by side */
+    .upload-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+    }
+
+    @media (max-width: 600px) { .upload-grid { grid-template-columns: 1fr; } }
+
+    .upload-label {
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: #666;
+      margin-bottom: 0.5rem;
+      display: block;
+    }
+
+    /* Buttons */
     .btn-row {
       display: flex;
       gap: 0.75rem;
@@ -139,21 +163,21 @@
       transition: background 0.15s, opacity 0.15s;
     }
 
-    #transcribe-btn {
+    .btn-primary {
       background: #1a1a1a;
       color: #fff;
       flex: 1;
     }
 
-    #transcribe-btn:hover:not(:disabled) { background: #333; }
-    #transcribe-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+    .btn-primary:hover:not(:disabled) { background: #333; }
+    .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
 
-    #clear-btn {
+    .btn-secondary {
       background: #eee;
       color: #555;
     }
 
-    #clear-btn:hover { background: #e0e0e0; }
+    .btn-secondary:hover { background: #e0e0e0; }
 
     /* Spinner */
     .spinner {
@@ -171,10 +195,10 @@
     @keyframes spin { to { transform: rotate(360deg); } }
 
     .loading .spinner { display: inline-block; }
-    .loading #btn-label::before { content: "解析中..."; }
-    .loading #btn-label .default-label { display: none; }
+    .loading .btn-label::before { content: "解析中..."; }
+    .loading .btn-label .default-label { display: none; }
 
-    /* Result area */
+    /* Result area (text mode) */
     #result-panel { display: none; }
 
     #result-header {
@@ -207,8 +231,37 @@
       color: #1a1a1a;
     }
 
+    /* Excel result */
+    #excel-result { display: none; }
+
+    .download-box {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      background: #f0f9f4;
+      border: 1px solid #b2dfca;
+      border-radius: 8px;
+      padding: 1rem 1.25rem;
+    }
+
+    .download-box svg { color: #2e7d32; flex-shrink: 0; }
+
+    .download-box .dl-info { flex: 1; }
+    .download-box .dl-info strong { display: block; color: #1a4731; font-size: 0.95rem; }
+    .download-box .dl-info span { font-size: 0.82rem; color: #4a7c5e; }
+
+    #download-link {
+      background: #2e7d32;
+      color: #fff;
+      font-size: 0.9rem;
+      padding: 0.55rem 1.2rem;
+      flex-shrink: 0;
+    }
+
+    #download-link:hover { background: #1b5e20; }
+
     /* Error */
-    #error-panel {
+    .error-panel {
       display: none;
       background: #fff5f5;
       border: 1px solid #fcc;
@@ -224,6 +277,10 @@
       font-size: 0.8rem;
       color: #aaa;
     }
+
+    /* Mode sections */
+    .mode-section { display: none; }
+    .mode-section.active { display: contents; }
   </style>
 </head>
 <body>
@@ -234,153 +291,317 @@
 </header>
 
 <main>
-  <div class="panel">
-    <div class="panel-title">画像を選択</div>
+  <!-- Mode tabs -->
+  <div class="mode-tabs">
+    <button class="mode-tab active" data-mode="text">テキスト出力</button>
+    <button class="mode-tab" data-mode="excel">Excel出力</button>
+  </div>
 
-    <div id="drop-zone" role="button" tabindex="0" aria-label="画像をドロップまたはクリックして選択">
-      <div class="placeholder">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-          <rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/>
-          <polyline points="21 15 16 10 5 21"/>
-        </svg>
-        <p>ここに画像をドラッグ＆ドロップ<br>またはクリックしてファイルを選択</p>
-        <p class="hint">対応形式: PNG / JPG / GIF / WebP（最大10MB）</p>
+  <!-- ===== TEXT MODE ===== -->
+  <div id="text-mode" class="mode-section active">
+    <div class="panel">
+      <div class="panel-title">画像を選択</div>
+
+      <div id="text-drop-zone" class="drop-zone" role="button" tabindex="0" aria-label="画像をドロップまたはクリックして選択">
+        <div class="placeholder">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/>
+            <polyline points="21 15 16 10 5 21"/>
+          </svg>
+          <p>ここに画像をドラッグ＆ドロップ<br>またはクリックしてファイルを選択</p>
+          <p class="hint">対応形式: PNG / JPG / GIF / WebP（最大10MB）</p>
+        </div>
+        <img class="preview-img" alt="プレビュー">
       </div>
-      <img id="preview-img" alt="プレビュー">
+      <input type="file" id="text-file-input" accept="image/png,image/jpeg,image/gif,image/webp" style="display:none">
+
+      <div class="btn-row">
+        <button id="transcribe-btn" class="btn-primary" disabled>
+          <span class="spinner"></span>
+          <span class="btn-label"><span class="default-label">文字起こしを開始</span></span>
+        </button>
+        <button id="text-clear-btn" class="btn-secondary">クリア</button>
+      </div>
     </div>
 
-    <input type="file" id="file-input" accept="image/png,image/jpeg,image/gif,image/webp">
+    <div id="text-error" class="error-panel" role="alert"></div>
 
-    <div class="btn-row">
-      <button id="transcribe-btn" disabled>
-        <span class="spinner"></span>
-        <span id="btn-label"><span class="default-label">文字起こしを開始</span></span>
-      </button>
-      <button id="clear-btn">クリア</button>
+    <div id="result-panel" class="panel">
+      <div id="result-header">
+        <div class="panel-title" style="margin-bottom:0">文字起こし結果</div>
+        <button id="copy-btn">コピー</button>
+      </div>
+      <div id="result-text"></div>
     </div>
   </div>
 
-  <div id="error-panel" role="alert"></div>
+  <!-- ===== EXCEL MODE ===== -->
+  <div id="excel-mode" class="mode-section">
+    <div class="panel">
+      <div class="panel-title">画像を選択</div>
 
-  <div id="result-panel" class="panel">
-    <div id="result-header">
-      <div class="panel-title" style="margin-bottom:0">文字起こし結果</div>
-      <button id="copy-btn">コピー</button>
+      <div class="upload-grid">
+        <div>
+          <span class="upload-label">① テンプレート（見出しのみ）</span>
+          <div id="template-drop-zone" class="drop-zone" role="button" tabindex="0" aria-label="テンプレート画像を選択">
+            <div class="placeholder">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="3" y="3" width="18" height="18" rx="2"/><line x1="8" y1="9" x2="16" y2="9"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="12" y2="17"/>
+              </svg>
+              <p>タイトル・見出しのみ<br>のプリント</p>
+              <p class="hint">PNG / JPG / GIF / WebP</p>
+            </div>
+            <img class="preview-img" alt="テンプレートプレビュー">
+          </div>
+          <input type="file" id="template-file-input" accept="image/png,image/jpeg,image/gif,image/webp" style="display:none">
+        </div>
+
+        <div>
+          <span class="upload-label">② 手書き画像（記入済み）</span>
+          <div id="handwriting-drop-zone" class="drop-zone" role="button" tabindex="0" aria-label="手書き画像を選択">
+            <div class="placeholder">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/>
+              </svg>
+              <p>手書きで記入された<br>フォーム画像</p>
+              <p class="hint">PNG / JPG / GIF / WebP</p>
+            </div>
+            <img class="preview-img" alt="手書きプレビュー">
+          </div>
+          <input type="file" id="handwriting-file-input" accept="image/png,image/jpeg,image/gif,image/webp" style="display:none">
+        </div>
+      </div>
+
+      <div class="btn-row">
+        <button id="excel-btn" class="btn-primary" disabled>
+          <span class="spinner"></span>
+          <span class="btn-label"><span class="default-label">Excel出力</span></span>
+        </button>
+        <button id="excel-clear-btn" class="btn-secondary">クリア</button>
+      </div>
     </div>
-    <div id="result-text"></div>
+
+    <div id="excel-error" class="error-panel" role="alert"></div>
+
+    <div id="excel-result" class="panel">
+      <div class="panel-title" style="margin-bottom:0.75rem">出力完了</div>
+      <div class="download-box">
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/>
+          <line x1="12" y1="18" x2="12" y2="12"/><polyline points="9 15 12 18 15 15"/>
+        </svg>
+        <div class="dl-info">
+          <strong>tegaki_result.xlsx</strong>
+          <span>1行目: 見出し　2行目以降: 文字起こし内容</span>
+        </div>
+        <button id="download-link">ダウンロード</button>
+      </div>
+    </div>
   </div>
 </main>
 
 <footer>Powered by Claude claude-opus-4-6 Vision</footer>
 
 <script>
-  const dropZone = document.getElementById('drop-zone');
-  const fileInput = document.getElementById('file-input');
-  const previewImg = document.getElementById('preview-img');
+  // ── Mode tabs ──────────────────────────────────────
+  const tabs = document.querySelectorAll('.mode-tab');
+  const textModeEl = document.getElementById('text-mode');
+  const excelModeEl = document.getElementById('excel-mode');
+
+  tabs.forEach(tab => {
+    tab.addEventListener('click', () => {
+      tabs.forEach(t => t.classList.remove('active'));
+      tab.classList.add('active');
+      const mode = tab.dataset.mode;
+      textModeEl.classList.toggle('active', mode === 'text');
+      excelModeEl.classList.toggle('active', mode === 'excel');
+    });
+  });
+
+  // ── Utility: generic drop zone setup ──────────────
+  function setupDropZone(zoneId, inputId, onFile) {
+    const zone = document.getElementById(zoneId);
+    const input = document.getElementById(inputId);
+    const img = zone.querySelector('.preview-img');
+
+    zone.addEventListener('click', () => input.click());
+    zone.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') input.click(); });
+    input.addEventListener('change', e => { if (e.target.files.length) handle(e.target.files[0]); });
+
+    zone.addEventListener('dragover', e => { e.preventDefault(); zone.classList.add('drag-over'); });
+    zone.addEventListener('dragleave', () => zone.classList.remove('drag-over'));
+    zone.addEventListener('drop', e => {
+      e.preventDefault();
+      zone.classList.remove('drag-over');
+      if (e.dataTransfer.files[0]) handle(e.dataTransfer.files[0]);
+    });
+
+    function handle(file) {
+      img.src = URL.createObjectURL(file);
+      zone.classList.add('has-image');
+      onFile(file);
+    }
+
+    function clear() {
+      img.src = '';
+      zone.classList.remove('has-image');
+      input.value = '';
+    }
+
+    return { clear };
+  }
+
+  // ── TEXT MODE ──────────────────────────────────────
+  let textFile = null;
   const transcribeBtn = document.getElementById('transcribe-btn');
-  const clearBtn = document.getElementById('clear-btn');
+  const textClearBtn = document.getElementById('text-clear-btn');
   const resultPanel = document.getElementById('result-panel');
   const resultText = document.getElementById('result-text');
-  const errorPanel = document.getElementById('error-panel');
+  const textError = document.getElementById('text-error');
   const copyBtn = document.getElementById('copy-btn');
 
-  let selectedFile = null;
-
-  // Click on drop zone
-  dropZone.addEventListener('click', () => fileInput.click());
-  dropZone.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') fileInput.click(); });
-
-  // File input change
-  fileInput.addEventListener('change', e => {
-    if (e.target.files.length) setFile(e.target.files[0]);
-  });
-
-  // Drag and drop
-  dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('drag-over'); });
-  dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag-over'));
-  dropZone.addEventListener('drop', e => {
-    e.preventDefault();
-    dropZone.classList.remove('drag-over');
-    const file = e.dataTransfer.files[0];
-    if (file) setFile(file);
-  });
-
-  function setFile(file) {
-    selectedFile = file;
-    const url = URL.createObjectURL(file);
-    previewImg.src = url;
-    dropZone.classList.add('has-image');
+  const textZone = setupDropZone('text-drop-zone', 'text-file-input', file => {
+    textFile = file;
     transcribeBtn.disabled = false;
-    hideError();
+    hideEl(textError);
     resultPanel.style.display = 'none';
-  }
+  });
 
-  function clearAll() {
-    selectedFile = null;
-    fileInput.value = '';
-    previewImg.src = '';
-    dropZone.classList.remove('has-image');
+  textClearBtn.addEventListener('click', () => {
+    textFile = null;
+    textZone.clear();
     transcribeBtn.disabled = true;
     resultPanel.style.display = 'none';
-    hideError();
-  }
+    hideEl(textError);
+  });
 
-  clearBtn.addEventListener('click', clearAll);
-
-  // Transcribe
   transcribeBtn.addEventListener('click', async () => {
-    if (!selectedFile) return;
-
+    if (!textFile) return;
     transcribeBtn.disabled = true;
     transcribeBtn.classList.add('loading');
-    hideError();
+    hideEl(textError);
     resultPanel.style.display = 'none';
 
-    const formData = new FormData();
-    formData.append('image', selectedFile);
+    const form = new FormData();
+    form.append('image', textFile);
 
     try {
-      const res = await fetch('/transcribe', { method: 'POST', body: formData });
+      const res = await fetch('/transcribe', { method: 'POST', body: form });
       const data = await res.json();
-
       if (!res.ok || data.error) {
-        showError(data.error || '不明なエラーが発生しました');
+        showError(textError, data.error || '不明なエラーが発生しました');
       } else {
         resultText.textContent = data.text;
         resultPanel.style.display = 'block';
         resultPanel.scrollIntoView({ behavior: 'smooth', block: 'start' });
       }
-    } catch (err) {
-      showError('サーバーへの接続に失敗しました');
+    } catch {
+      showError(textError, 'サーバーへの接続に失敗しました');
     } finally {
       transcribeBtn.disabled = false;
       transcribeBtn.classList.remove('loading');
     }
   });
 
-  // Copy
   copyBtn.addEventListener('click', async () => {
     try {
       await navigator.clipboard.writeText(resultText.textContent);
       copyBtn.textContent = '✓ コピー済み';
       copyBtn.classList.add('copied');
-      setTimeout(() => {
-        copyBtn.textContent = 'コピー';
-        copyBtn.classList.remove('copied');
-      }, 2000);
+      setTimeout(() => { copyBtn.textContent = 'コピー'; copyBtn.classList.remove('copied'); }, 2000);
     } catch {
       copyBtn.textContent = 'コピー失敗';
       setTimeout(() => { copyBtn.textContent = 'コピー'; }, 2000);
     }
   });
 
-  function showError(msg) {
-    errorPanel.textContent = '⚠️ ' + msg;
-    errorPanel.style.display = 'block';
+  // ── EXCEL MODE ─────────────────────────────────────
+  let templateFile = null;
+  let handwritingFile = null;
+  let excelBlob = null;
+
+  const excelBtn = document.getElementById('excel-btn');
+  const excelClearBtn = document.getElementById('excel-clear-btn');
+  const excelResult = document.getElementById('excel-result');
+  const excelError = document.getElementById('excel-error');
+  const downloadLink = document.getElementById('download-link');
+
+  function updateExcelBtn() {
+    excelBtn.disabled = !(templateFile && handwritingFile);
   }
 
-  function hideError() {
-    errorPanel.style.display = 'none';
+  const templateZone = setupDropZone('template-drop-zone', 'template-file-input', file => {
+    templateFile = file;
+    hideEl(excelError);
+    excelResult.style.display = 'none';
+    updateExcelBtn();
+  });
+
+  const handwritingZone = setupDropZone('handwriting-drop-zone', 'handwriting-file-input', file => {
+    handwritingFile = file;
+    hideEl(excelError);
+    excelResult.style.display = 'none';
+    updateExcelBtn();
+  });
+
+  excelClearBtn.addEventListener('click', () => {
+    templateFile = null;
+    handwritingFile = null;
+    excelBlob = null;
+    templateZone.clear();
+    handwritingZone.clear();
+    excelBtn.disabled = true;
+    excelResult.style.display = 'none';
+    hideEl(excelError);
+  });
+
+  excelBtn.addEventListener('click', async () => {
+    if (!templateFile || !handwritingFile) return;
+    excelBtn.disabled = true;
+    excelBtn.classList.add('loading');
+    hideEl(excelError);
+    excelResult.style.display = 'none';
+
+    const form = new FormData();
+    form.append('template', templateFile);
+    form.append('handwriting', handwritingFile);
+
+    try {
+      const res = await fetch('/transcribe-excel', { method: 'POST', body: form });
+      if (!res.ok) {
+        const data = await res.json();
+        showError(excelError, data.error || '不明なエラーが発生しました');
+        return;
+      }
+      excelBlob = await res.blob();
+      excelResult.style.display = 'block';
+      excelResult.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    } catch {
+      showError(excelError, 'サーバーへの接続に失敗しました');
+    } finally {
+      excelBtn.disabled = false;
+      excelBtn.classList.remove('loading');
+    }
+  });
+
+  downloadLink.addEventListener('click', () => {
+    if (!excelBlob) return;
+    const url = URL.createObjectURL(excelBlob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'tegaki_result.xlsx';
+    a.click();
+    URL.revokeObjectURL(url);
+  });
+
+  // ── Helpers ────────────────────────────────────────
+  function showError(el, msg) {
+    el.textContent = '⚠️ ' + msg;
+    el.style.display = 'block';
+  }
+
+  function hideEl(el) {
+    el.style.display = 'none';
   }
 </script>
 </body>

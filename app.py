@@ -205,7 +205,7 @@ def transcribe_excel():
         wb = Workbook()
         ws = wb.active
         ws.title = "文字起こし結果"
-        ws.append(headers)
+        ws.append([str(h) for h in headers])
 
         for hw_file in handwriting_files:
             hw_data, hw_media = resize_image(
@@ -213,7 +213,16 @@ def transcribe_excel():
                 MEDIA_TYPE_MAP[hw_file.filename.rsplit(".", 1)[1].lower()],
             )
             content = transcribe_with_headers(hw_data, hw_media, headers)
-            ws.append([content.get(h, "") for h in headers])
+            row = []
+            for h in headers:
+                val = content.get(h)
+                if val is None:
+                    row.append("")
+                elif isinstance(val, (list, dict)):
+                    row.append(json.dumps(val, ensure_ascii=False))
+                else:
+                    row.append(str(val))
+            ws.append(row)
 
         excel_io = io.BytesIO()
         wb.save(excel_io)

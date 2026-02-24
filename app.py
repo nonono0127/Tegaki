@@ -45,16 +45,14 @@ def allowed_file(filename: str) -> bool:
     return "." in filename and filename.rsplit(".", 1)[1].lower() in ALLOWED_EXTENSIONS
 
 
-def _call_claude(messages: list, max_tokens: int = 4096) -> str:
+def _call_claude(messages: list, max_tokens: int = 8192) -> str:
     client = anthropic.Anthropic(api_key=os.environ.get("ANTHROPIC_API_KEY"))
-    with client.messages.stream(
+    response = client.messages.create(
         model="claude-opus-4-6",
         max_tokens=max_tokens,
-        thinking={"type": "adaptive"},
         messages=messages,
-    ) as stream:
-        final = stream.get_final_message()
-    for block in final.content:
+    )
+    for block in response.content:
         if block.type == "text":
             return block.text
     return ""

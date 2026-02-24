@@ -357,18 +357,21 @@
         </div>
 
         <div>
-          <span class="upload-label">② 手書き画像（記入済み）</span>
-          <div id="handwriting-drop-zone" class="drop-zone" role="button" tabindex="0" aria-label="手書き画像を選択">
+          <span class="upload-label">② 手書き画像（記入済み・複数可）</span>
+          <div id="handwriting-drop-zone" class="drop-zone" role="button" tabindex="0" aria-label="手書き画像を選択（複数可）">
             <div class="placeholder">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/>
               </svg>
-              <p>手書きで記入された<br>フォーム画像</p>
+              <p>手書きで記入された<br>フォーム画像（複数枚OK）</p>
               <p class="hint">PNG / JPG / GIF / WebP</p>
             </div>
-            <img class="preview-img" alt="手書きプレビュー">
+            <div class="hw-file-list" style="display:none; padding:1rem; text-align:left;">
+              <p class="hw-count" style="font-weight:600; margin-bottom:0.5rem;"></p>
+              <ul class="hw-names" style="font-size:0.82rem; color:#555; list-style:disc; padding-left:1.2rem; max-height:140px; overflow-y:auto;"></ul>
+            </div>
           </div>
-          <input type="file" id="handwriting-file-input" accept="image/png,image/jpeg,image/gif,image/webp" style="display:none">
+          <input type="file" id="handwriting-file-input" accept="image/png,image/jpeg,image/gif,image/webp" multiple style="display:none">
         </div>
       </div>
 
@@ -392,7 +395,7 @@
         </svg>
         <div class="dl-info">
           <strong>tegaki_result.xlsx</strong>
-          <span>1行目: 見出し　2行目以降: 文字起こし内容</span>
+          <span>1行目: 見出し　2行目以降: 手書き画像ごとの文字起こし内容</span>
         </div>
         <button id="download-link">ダウンロード</button>
       </div>
@@ -517,7 +520,7 @@
 
   // ── EXCEL MODE ─────────────────────────────────────
   let templateFile = null;
-  let handwritingFile = null;
+  let handwritingFiles = [];
   let excelBlob = null;
 
   const excelBtn = document.getElementById('excel-btn');
@@ -527,7 +530,7 @@
   const downloadLink = document.getElementById('download-link');
 
   function updateExcelBtn() {
-    excelBtn.disabled = !(templateFile && handwritingFile);
+    excelBtn.disabled = !(templateFile && handwritingFiles.length > 0);
   }
 
   const templateZone = setupDropZone('template-drop-zone', 'template-file-input', file => {
@@ -537,26 +540,60 @@
     updateExcelBtn();
   });
 
-  const handwritingZone = setupDropZone('handwriting-drop-zone', 'handwriting-file-input', file => {
-    handwritingFile = file;
-    hideEl(excelError);
-    excelResult.style.display = 'none';
-    updateExcelBtn();
-  });
+  // 手書きゾーンは複数ファイル対応のため独自実装
+  (function setupHandwritingZone() {
+    const zone = document.getElementById('handwriting-drop-zone');
+    const input = document.getElementById('handwriting-file-input');
+    const placeholder = zone.querySelector('.placeholder');
+    const fileList = zone.querySelector('.hw-file-list');
+    const countEl = zone.querySelector('.hw-count');
+    const namesEl = zone.querySelector('.hw-names');
+
+    function showFiles(files) {
+      handwritingFiles = Array.from(files);
+      placeholder.style.display = 'none';
+      fileList.style.display = 'block';
+      countEl.textContent = `${handwritingFiles.length}枚 選択済み`;
+      namesEl.innerHTML = handwritingFiles.map(f => `<li>${f.name}</li>`).join('');
+      hideEl(excelError);
+      excelResult.style.display = 'none';
+      updateExcelBtn();
+    }
+
+    zone.addEventListener('click', () => input.click());
+    zone.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') input.click(); });
+    input.addEventListener('change', e => { if (e.target.files.length) showFiles(e.target.files); });
+    zone.addEventListener('dragover', e => { e.preventDefault(); zone.classList.add('drag-over'); });
+    zone.addEventListener('dragleave', () => zone.classList.remove('drag-over'));
+    zone.addEventListener('drop', e => {
+      e.preventDefault();
+      zone.classList.remove('drag-over');
+      if (e.dataTransfer.files.length) showFiles(e.dataTransfer.files);
+    });
+
+    window._clearHandwritingZone = function() {
+      handwritingFiles = [];
+      input.value = '';
+      placeholder.style.display = '';
+      fileList.style.display = 'none';
+      countEl.textContent = '';
+      namesEl.innerHTML = '';
+    };
+  })();
 
   excelClearBtn.addEventListener('click', () => {
     templateFile = null;
-    handwritingFile = null;
+    handwritingFiles = [];
     excelBlob = null;
     templateZone.clear();
-    handwritingZone.clear();
+    window._clearHandwritingZone();
     excelBtn.disabled = true;
     excelResult.style.display = 'none';
     hideEl(excelError);
   });
 
   excelBtn.addEventListener('click', async () => {
-    if (!templateFile || !handwritingFile) return;
+    if (!templateFile || handwritingFiles.length === 0) return;
     excelBtn.disabled = true;
     excelBtn.classList.add('loading');
     hideEl(excelError);
@@ -564,7 +601,7 @@
 
     const form = new FormData();
     form.append('template', templateFile);
-    form.append('handwriting', handwritingFile);
+    handwritingFiles.forEach(f => form.append('handwriting', f));
 
     try {
       const res = await fetch('/transcribe-excel', { method: 'POST', body: form });

@@ -181,18 +181,20 @@ def transcribe_excel():
         return jsonify({"error": "テンプレート画像と手書き画像の両方が必要です"}), 400
 
     template_file = request.files["template"]
-    handwriting_file = request.files["handwriting"]
 
-    if not allowed_file(template_file.filename) or not allowed_file(handwriting_file.filename):
+    if not allowed_file(template_file.filename):
+        return jsonify({"error": "対応していないファイル形式です (PNG, JPG, GIF, WebP のみ)"}), 400
+
+    handwriting_files = request.files.getlist("handwriting")
+    if not handwriting_files or all(f.filename == "" for f in handwriting_files):
+        return jsonify({"error": "手書き画像が選択されていません"}), 400
+
+    if not all(allowed_file(f.filename) for f in handwriting_files):
         return jsonify({"error": "対応していないファイル形式です (PNG, JPG, GIF, WebP のみ)"}), 400
 
     template_data, template_media = resize_image(
         template_file.read(),
         MEDIA_TYPE_MAP[template_file.filename.rsplit(".", 1)[1].lower()],
-    )
-    handwriting_data, hw_media = resize_image(
-        handwriting_file.read(),
-        MEDIA_TYPE_MAP[handwriting_file.filename.rsplit(".", 1)[1].lower()],
     )
 
     try:
@@ -200,13 +202,18 @@ def transcribe_excel():
         if not headers:
             return jsonify({"error": "テンプレートから見出しを抽出できませんでした"}), 500
 
-        content = transcribe_with_headers(handwriting_data, hw_media, headers)
-
         wb = Workbook()
         ws = wb.active
         ws.title = "文字起こし結果"
         ws.append(headers)
-        ws.append([content.get(h, "") for h in headers])
+
+        for hw_file in handwriting_files:
+            hw_data, hw_media = resize_image(
+                hw_file.read(),
+                MEDIA_TYPE_MAP[hw_file.filename.rsplit(".", 1)[1].lower()],
+            )
+            content = transcribe_with_headers(hw_data, hw_media, headers)
+            ws.append([content.get(h, "") for h in headers])
 
         excel_io = io.BytesIO()
         wb.save(excel_io)

@@ -8,6 +8,7 @@ from flask import Flask, render_template, request, jsonify, send_file
 import anthropic
 from dotenv import load_dotenv
 from openpyxl import Workbook
+from PIL import Image
 
 load_dotenv()
 
@@ -22,6 +23,22 @@ MEDIA_TYPE_MAP = {
     "gif": "image/gif",
     "webp": "image/webp",
 }
+
+
+MAX_IMAGE_PIXELS = 7000
+
+
+def resize_image(image_data: bytes, media_type: str) -> tuple[bytes, str]:
+    """画像が8000px超の場合にリサイズする"""
+    img = Image.open(io.BytesIO(image_data))
+    w, h = img.size
+    if max(w, h) > MAX_IMAGE_PIXELS:
+        scale = MAX_IMAGE_PIXELS / max(w, h)
+        img = img.resize((int(w * scale), int(h * scale)), Image.LANCZOS)
+    out = io.BytesIO()
+    fmt = "JPEG" if media_type in ("image/jpeg",) else img.format or "PNG"
+    img.save(out, format=fmt)
+    return out.getvalue(), media_type
 
 
 def allowed_file(filename: str) -> bool:
@@ -147,7 +164,7 @@ def transcribe():
 
     ext = file.filename.rsplit(".", 1)[1].lower()
     media_type = MEDIA_TYPE_MAP[ext]
-    image_data = file.read()
+    image_data, media_type = resize_image(file.read(), media_type)
 
     try:
         result = transcribe_handwriting(image_data, media_type)
@@ -171,11 +188,14 @@ def transcribe_excel():
     if not allowed_file(template_file.filename) or not allowed_file(handwriting_file.filename):
         return jsonify({"error": "対応していないファイル形式です (PNG, JPG, GIF, WebP のみ)"}), 400
 
-    template_data = template_file.read()
-    template_media = MEDIA_TYPE_MAP[template_file.filename.rsplit(".", 1)[1].lower()]
-
-    handwriting_data = handwriting_file.read()
-    hw_media = MEDIA_TYPE_MAP[handwriting_file.filename.rsplit(".", 1)[1].lower()]
+    template_data, template_media = resize_image(
+        template_file.read(),
+        MEDIA_TYPE_MAP[template_file.filename.rsplit(".", 1)[1].lower()],
+    )
+    handwriting_data, hw_media = resize_image(
+        handwriting_file.read(),
+        MEDIA_TYPE_MAP[handwriting_file.filename.rsplit(".", 1)[1].lower()],
+    )
 
     try:
         headers = extract_headers(template_data, template_media)
